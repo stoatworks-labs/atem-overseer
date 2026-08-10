@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { ChannelSource, RendererConfig } from '@av/restreamer';
 import { log } from './diag/index.js';
 
 export interface DeviceConfig {
@@ -41,12 +42,23 @@ export interface RestreamerSettings {
   /** how the ATEM reaches the Restreamer's RTMP ingest */
   rtmpHost: string;
   rtmpPort: number;
+  /** must match the Core's own `rtmp.app`; stock Restreamer is "/", so "" */
   rtmpApp: string;
   rtmpToken?: string;
   /** namespacing prefix for our processes on a shared Restreamer */
   referencePrefix: string;
-  /** per-device egress destinations, keyed by device id */
-  channels?: Record<string, { destinations: RestreamerDestination[] }>;
+  /**
+   * Per-device channel settings, keyed by device id: the egress destinations,
+   * and what feeds the channel. `source` defaults to `{ kind: 'rtmp' }` — the
+   * ATEM publishing to Restreamer itself — so a config written before source
+   * types existed keeps its exact previous behaviour.
+   */
+  channels?: Record<string, { destinations: RestreamerDestination[]; source?: ChannelSource }>;
+  /**
+   * Default renderer for browser sources that don't name their own, so a fleet
+   * with one WebLinked doesn't repeat its address per device.
+   */
+  renderer?: RendererConfig;
 }
 
 export interface OverseerConfig {
@@ -97,9 +109,12 @@ export function mockConfig(): OverseerConfig {
       password: 'demo',
       rtmpHost: 'restreamer.local',
       rtmpPort: 1935,
-      rtmpApp: 'live',
+      rtmpApp: '',
       referencePrefix: 'atem-overseer',
+      renderer: { url: 'http://weblinked.local:7654' },
       channels: {
+        // One channel of each source kind, so `--mock` exercises all three
+        // paths rather than only the one that existed first.
         'cam-a': {
           destinations: [
             {
@@ -110,6 +125,21 @@ export function mockConfig(): OverseerConfig {
               enabled: true,
             },
           ],
+        },
+        'cam-b': {
+          destinations: [],
+          source: {
+            kind: 'browser',
+            url: 'https://example.com/lower-third',
+            width: 1920,
+            height: 1080,
+            frameRate: '50',
+            videoBitrate: '6000k',
+          },
+        },
+        'cam-c': {
+          destinations: [],
+          source: { kind: 'file', path: 'media/holding-slate.mp4', loop: true, silentAudio: true },
         },
       },
     },

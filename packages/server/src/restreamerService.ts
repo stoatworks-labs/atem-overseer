@@ -1,7 +1,11 @@
 import {
+  DEFAULT_SOURCE,
   RestreamerClient,
   SplitManager,
+  createMockRendererTransport,
   createMockTransport,
+  parseChannelSource,
+  type ChannelSource,
   type ChannelState,
   type Destination,
 } from '@av/restreamer';
@@ -14,6 +18,10 @@ export interface RestreamerStatus {
   url?: string;
   reachable?: boolean;
   referencePrefix?: string;
+  /** source kinds this build can provision, for the UI to offer */
+  sourceKinds?: ChannelSource['kind'][];
+  /** the fleet-wide renderer, when one is configured */
+  rendererUrl?: string;
 }
 
 /**
@@ -42,7 +50,13 @@ export class RestreamerService {
     });
     this.manager = new SplitManager(this.client, {
       referencePrefix: r.referencePrefix || 'atem-overseer',
-      ingest: { host: r.rtmpHost, port: r.rtmpPort, app: r.rtmpApp || 'live', token: r.rtmpToken },
+      // No `|| 'live'` fallback: a stock Restreamer's rtmp.app is "/", so an
+      // empty app is both valid and the common case. Defaulting to "live" sent
+      // encoders to a path the split never reads — see docs/restreamer.md.
+      ingest: { host: r.rtmpHost, port: r.rtmpPort, app: r.rtmpApp ?? '', token: r.rtmpToken },
+      // In --mock there is no WebLinked either, so the browser path gets a
+      // simulated renderer rather than silently failing every request.
+      rendererFetch: mock ? createMockRendererTransport() : undefined,
     });
   }
 
@@ -63,6 +77,20 @@ export class RestreamerService {
     return (this.cfg.restreamer?.channels?.[deviceId]?.destinations ?? []) as Destination[];
   }
 
+  /**
+   * What feeds a device's channel. A browser source with no renderer of its own
+   * inherits the fleet-wide one, so a single WebLinked doesn't have to be
+   * repeated against every device.
+   */
+  source(deviceId: string): ChannelSource {
+    const stored = this.cfg.restreamer?.channels?.[deviceId]?.source;
+    if (!stored) return DEFAULT_SOURCE;
+    if (stored.kind === 'browser' && !stored.renderer && this.cfg.restreamer?.renderer) {
+      return { ...stored, renderer: this.cfg.restreamer.renderer };
+    }
+    return stored;
+  }
+
   async status(): Promise<RestreamerStatus> {
     const r = this.cfg.restreamer;
     if (!r?.enabled || !this.client) return { enabled: false, configured: !!r };
@@ -71,28 +99,72 @@ export class RestreamerService {
       configured: true,
       url: r.url,
       referencePrefix: r.referencePrefix,
+      sourceKinds: ['rtmp', 'file', 'browser'],
+      rendererUrl: r.renderer?.url,
       reachable: await this.client.ping().catch(() => false),
     };
   }
 
   async channel(deviceId: string): Promise<ChannelState | null> {
     if (!this.manager) return null;
-    return this.manager.state(deviceId, this.destinations(deviceId), this.monitorUrl(deviceId));
+    return this.manager.state(
+      deviceId,
+      this.destinations(deviceId),
+      this.monitorUrl(deviceId),
+      this.source(deviceId),
+    );
   }
 
   async provision(deviceId: string): Promise<ChannelState> {
     if (!this.manager) throw new Error('Restreamer is not enabled');
-    return this.manager.sync(deviceId, this.monitorUrl(deviceId), this.destinations(deviceId));
+    return this.manager.sync(
+      deviceId,
+      this.monitorUrl(deviceId),
+      this.destinations(deviceId),
+      this.source(deviceId),
+    );
+  }
+
+  /**
+   * Change what feeds a device's channel, and re-provision if it was already
+   * live. Validation happens in the package's `parseChannelSource`, so a bad
+   * body is a 400 that changes nothing rather than a channel provisioned from
+   * half-understood input.
+   */
+  async setSource(deviceId: string, input: unknown): Promise<ChannelState | null> {
+    if (!this.cfg.restreamer) throw new Error('Restreamer is not enabled');
+    const source = parseChannelSource(input);
+    this.cfg.restreamer.channels ??= {};
+    const channel = (this.cfg.restreamer.channels[deviceId] ??= { destinations: [] });
+    channel.source = source;
+    this.persist();
+    if (!this.manager) return null;
+    const existing = await this.manager.state(
+      deviceId,
+      this.destinations(deviceId),
+      this.monitorUrl(deviceId),
+      source,
+    );
+    // Only push it live if the channel was already provisioned; changing the
+    // source of a torn-down channel should not quietly start streaming.
+    if (existing?.provisioned) return this.provision(deviceId);
+    return existing;
   }
 
   async setDestinations(deviceId: string, destinations: RestreamerDestination[]): Promise<ChannelState | null> {
     if (!this.cfg.restreamer) throw new Error('Restreamer is not enabled');
     this.cfg.restreamer.channels ??= {};
-    this.cfg.restreamer.channels[deviceId] = { destinations };
+    const channel = (this.cfg.restreamer.channels[deviceId] ??= { destinations: [] });
+    channel.destinations = destinations;
     this.persist();
     // if the channel is already provisioned, push the new output set live
     if (this.manager) {
-      const existing = await this.manager.state(deviceId, destinations as Destination[], this.monitorUrl(deviceId));
+      const existing = await this.manager.state(
+        deviceId,
+        destinations as Destination[],
+        this.monitorUrl(deviceId),
+        this.source(deviceId),
+      );
       if (existing?.provisioned) return this.provision(deviceId);
       return existing;
     }
@@ -101,7 +173,7 @@ export class RestreamerService {
 
   async teardown(deviceId: string): Promise<void> {
     if (!this.manager) return;
-    await this.manager.teardown(deviceId);
+    await this.manager.teardown(deviceId, this.source(deviceId));
   }
 
   private persist(): void {
@@ -121,7 +193,9 @@ export class RestreamerService {
     return `# Restreamer for Atem Overseer's split pipeline.
 # Run:  docker compose up -d   then open http://localhost:8080 (admin login below).
 # Point Overseer's config \`restreamer.url\` at http://<this-host>:8080 and set the
-# same username/password. ATEMs publish to rtmp://<this-host>:1935/${r?.rtmpApp || 'live'}/<deviceId>.
+# same username/password. ATEMs publish to rtmp://<this-host>:1935/<deviceId> —
+# note no app segment, because this image's rtmp.app is "/". Set \`rtmpApp\` to
+# match whatever \`GET /api/v3/config\` reports, not to a guess.
 services:
   restreamer:
     image: datarhei/restreamer:latest

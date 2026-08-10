@@ -87,6 +87,44 @@ export interface RestreamerStatus {
   url?: string;
   reachable?: boolean;
   referencePrefix?: string;
+  sourceKinds?: RestreamerSourceKind[];
+  rendererUrl?: string;
+}
+
+export type RestreamerSourceKind = 'rtmp' | 'file' | 'browser';
+
+/** What feeds a channel. Mirrors ChannelSource in @av/restreamer; kept
+ *  structurally identical so the same JSON round-trips through the REST API. */
+export interface RestreamerSource {
+  kind: RestreamerSourceKind;
+  /** rtmp/browser: internal ingest stream name */
+  name?: string;
+  /** file: path on the Restreamer's own filesystem */
+  path?: string;
+  loop?: boolean;
+  silentAudio?: boolean;
+  /** browser: the page to render */
+  url?: string;
+  width?: number;
+  height?: number;
+  frameRate?: string;
+  videoBitrate?: string;
+  renderer?: { url: string; token?: string; sourceId?: string };
+}
+
+export interface RestreamerSourceProcess {
+  processId: string;
+  provisioned: boolean;
+  running: boolean;
+  exec?: string;
+  lastLog?: string;
+}
+
+export interface RestreamerRendererState {
+  reachable: boolean;
+  loadedUrl?: string;
+  publishing?: boolean;
+  error?: string;
 }
 
 export interface RestreamerChannel {
@@ -99,6 +137,9 @@ export interface RestreamerChannel {
   ingestPushUrl: string;
   monitorUrl: string;
   destinations: RestreamerDestination[];
+  source: RestreamerSource;
+  sourceProcess?: RestreamerSourceProcess;
+  renderer?: RestreamerRendererState;
 }
 
 export interface MediaPoolItem {

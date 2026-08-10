@@ -118,11 +118,18 @@ Upload limit **64 MB** (multer), JSON body limit 2 MB, XML body limit 2 MB. `nam
 | `GET` | `/api/devices/:id/restreamer` | that device's channel |
 | `POST` | `/api/devices/:id/restreamer/provision` | create the channel |
 | `PUT` | `/api/devices/:id/restreamer/destinations` | `{ destinations: [...] }` |
+| `PUT` | `/api/devices/:id/restreamer/source` | `{ source: { kind: "rtmp" \| "file" \| "browser", ... } }` |
 | `DELETE` | `/api/devices/:id/restreamer` | tear the channel down |
 
 `destinations` **must be an array or it is treated as empty** — a malformed body silently clears
 every egress destination for that device rather than erroring. See
 [restreamer.md](restreamer.md).
+
+`source` is the opposite: it is **validated strictly**, and an unparseable body is a 400 that
+changes nothing. A file source with no `path`, a browser source with no `url`, a decimal
+`frameRate` and an unknown `kind` are all rejected by name. Changing the source of a channel
+that is already provisioned re-syncs it live; changing it on a torn-down channel does not
+start anything.
 
 ### Static web
 

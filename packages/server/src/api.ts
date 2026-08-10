@@ -159,6 +159,22 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
     }),
   );
 
+  /**
+   * Change what feeds a device's channel: the ATEM itself (`rtmp`), a file
+   * played out by Restreamer (`file`), or a page rendered by WebLinked
+   * (`browser`). Unlike the destinations route above this one is strict — an
+   * unparseable body is a 400 that changes nothing, because provisioning a
+   * channel from a half-understood source is how you put the wrong thing to
+   * air. See docs/restreamer.md.
+   */
+  app.put(
+    '/api/devices/:id/restreamer/source',
+    asyncH(async (req, res) => {
+      if (!manager.config(req.params.id)) throw new Error('unknown device');
+      res.json(await restreamer.setSource(req.params.id, req.body?.source));
+    }),
+  );
+
   app.delete(
     '/api/devices/:id/restreamer',
     asyncH(async (req, res) => {

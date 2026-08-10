@@ -51,6 +51,53 @@ import { RestreamerClient, createMockTransport } from '@av/restreamer';
 const client = new RestreamerClient({ url: 'http://mock', username: 'x', password: 'y', fetch: createMockTransport() });
 ```
 
+## Source types
+
+A channel does not have to be fed by an encoder. `sync()` takes an optional
+`ChannelSource`:
+
+```ts
+await split.sync('slate', monitorUrl, dests, {
+  kind: 'file', path: 'media/holding-slate.mp4', loop: true, silentAudio: true,
+});
+
+await split.sync('lower-third', monitorUrl, dests, {
+  kind: 'browser', url: 'https://example.com/l3',
+  width: 1920, height: 1080, frameRate: '50',
+  renderer: { url: 'http://weblinked.local:7654' },
+});
+```
+
+```
+ file   ─▶ [feeder process] ─┐
+ ATEM   ──────RTMP───────────┼─▶ {rtmp,name=…} ─▶ [split, -c copy] ─▶ monitor + destinations
+ page   ─▶ [WebLinked] ──────┘
+```
+
+**The split never changes.** Kinds that the Core has to play itself get a second
+process upstream (`<splitId>-src`) that feeds the internal RTMP stream; `rtmp`
+and `browser` are fed from outside it and get none. So the split stays a lossless
+`-c copy` fan-out for every source type, and a channel encodes at most once
+however many destinations it has.
+
+- `{ kind: 'rtmp', name? }` — the default. Something else publishes to you.
+- `{ kind: 'file', path, loop?, silentAudio?, encode? }` — `path` resolves on the
+  **Core's** filesystem (a bare path becomes `{diskfs}/…`). `silentAudio` adds a
+  lavfi silence track for a file with no audio, which most platforms require.
+  Without `encode` the file is stream-copied.
+- `{ kind: 'browser', url, width?, height?, frameRate?, videoBitrate?, renderer? }`
+  — the Core has no browser, so this needs a renderer. `WebLinkedRenderer` drives
+  [WebLinked](https://github.com/stoatworks-labs/weblinked) over its control API;
+  implement `BrowserRenderer` for anything else. `frameRate` is an exact rational
+  (`'50'`, `'60000/1001'`) — never a decimal.
+
+`parseChannelSource(unknown)` validates untrusted input and throws with a reason,
+so every app that ports this rejects the same things. `createMockRendererTransport()`
+is an in-memory WebLinked for the same reason `createMockTransport()` exists.
+
+`teardown()` removes both processes and releases the renderer's output, but
+leaves the renderer's page loaded — a renderer may be shared.
+
 ## Porting to another app (e.g. flock)
 
 Everything app-specific is passed in, not baked in:
@@ -69,6 +116,12 @@ That's the whole contract — no imports to rewrite.
 
 - `RestreamerClient` — `ping`, `listProcesses`, `getProcess`/`tryGetProcess`,
   `getState`, `createProcess`, `updateProcess`, `deleteProcess`, `command`.
-- `SplitManager` — `sync`, `state`, `teardown`, `processId`, `ingestPushUrl`.
+- `SplitManager` — `sync`, `state`, `teardown`, `processId`, `sourceProcessId`,
+  `ingestPushUrl`.
 - `buildSplitProcessConfig(spec)` — pure; returns the Core process JSON.
-- `createMockTransport()` — in-memory Core for tests/demos.
+- `buildSourceProcessConfig(spec, splitId)` — pure; the upstream feeder, or
+  `null` for a kind that does not need one.
+- `parseChannelSource`, `encodeOptions`, `fileAddress`, `needsSourceProcess`.
+- `WebLinkedRenderer`, `createRenderer`, `rendererFormat`, `rendererOutputName`.
+- `createMockTransport()`, `createMockRendererTransport()` — in-memory Core and
+  renderer for tests/demos.
