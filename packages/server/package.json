@@ -28,7 +28,7 @@
     "@types/multicast-dns": "^7.2.4",
     "@types/node": "^26.1.2",
     "@types/ws": "^8.5.13",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.4",
     "typescript": "^5.7.2"
   }
 }
