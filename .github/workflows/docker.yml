@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       # Only log in for pushes. Pull requests from forks have no package write
       # token, and a login step that fails there turns every PR red for a
