@@ -93,7 +93,7 @@ Behind each tile's ⚙ (gear):
 | Build | Download | Size |
 | --- | --- | --- |
 | Apple Silicon · .dmg disk image | [`Atem.Overseer_0.3.0_aarch64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_aarch64.dmg) | 48 MB |
-| Intel · .dmg disk image | [`Atem.Overseer_0.3.0_x64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_x64.dmg) | 49 MB |
+| Intel · .dmg disk image | [`Atem.Overseer_0.3.0_x64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_x64.dmg) | 50 MB |
 | Apple Silicon · .pkg installer | [`atem-overseer-0.3.0-macos-aarch64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/atem-overseer-0.3.0-macos-aarch64.pkg) | 48 MB |
 | Intel · .pkg installer | [`atem-overseer-0.3.0-macos-x86_64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/atem-overseer-0.3.0-macos-x86_64.pkg) | 50 MB |
 
