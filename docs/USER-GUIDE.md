@@ -185,7 +185,7 @@ port-forwarded.
 | **Sent `{"action":"begin"}` and it stopped** | Anything that isn't exactly `start` means stop. There is no validation — see [API.md](API.md). |
 | **Restreamer destinations vanished** | A malformed `destinations` body is treated as an empty array and clears them — see [API.md](API.md). |
 | **Phantom type errors when building** | `build:libs` didn't run first — see [DEVELOPING.md](DEVELOPING.md). |
-| **Unsigned desktop app's helpers die silently on macOS** | Approving the `.app` doesn't unquarantine its bundled binaries. See the launcher README. |
+| **Desktop app's helpers die silently on macOS** | Only on a self-built or pre-notarisation copy — the released `.pkg` builds are signed and notarised. Approving an unsigned `.app` does not unquarantine its bundled binaries. See the launcher README. |
 
 ---
 
