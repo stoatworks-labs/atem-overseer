@@ -85,17 +85,17 @@ Behind each tile's ⚙ (gear):
 
 ## Download
 
-**[v0.3.0](https://github.com/stoatworks-labs/atem-overseer/releases/tag/v0.3.0)** — prebuilt for macOS, Windows and Linux. Pick your platform:
+**[v0.3.1](https://github.com/stoatworks-labs/atem-overseer/releases/tag/v0.3.1)** — prebuilt for macOS, Windows and Linux. Pick your platform:
 
 <details>
 <summary><b>macOS</b> — Apple Silicon, Intel</summary>
 
 | Build | Download | Size |
 | --- | --- | --- |
-| Apple Silicon · .dmg disk image | [`Atem.Overseer_0.3.0_aarch64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_aarch64.dmg) | 48 MB |
-| Intel · .dmg disk image | [`Atem.Overseer_0.3.0_x64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_x64.dmg) | 50 MB |
-| Apple Silicon · .pkg installer | [`atem-overseer-0.3.0-macos-aarch64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/atem-overseer-0.3.0-macos-aarch64.pkg) | 48 MB |
-| Intel · .pkg installer | [`atem-overseer-0.3.0-macos-x86_64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/atem-overseer-0.3.0-macos-x86_64.pkg) | 50 MB |
+| Apple Silicon · .dmg disk image | [`Atem.Overseer_0.3.1_aarch64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/Atem.Overseer_0.3.1_aarch64.dmg) | 48 MB |
+| Intel · .dmg disk image | [`Atem.Overseer_0.3.1_x64.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/Atem.Overseer_0.3.1_x64.dmg) | 50 MB |
+| Apple Silicon · .pkg installer | [`atem-overseer-0.3.1-macos-aarch64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/atem-overseer-0.3.1-macos-aarch64.pkg) | 48 MB |
+| Intel · .pkg installer | [`atem-overseer-0.3.1-macos-x86_64.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/atem-overseer-0.3.1-macos-x86_64.pkg) | 50 MB |
 
 </details>
 
@@ -104,7 +104,7 @@ Behind each tile's ⚙ (gear):
 
 | Build | Download | Size |
 | --- | --- | --- |
-| x64 · .exe installer | [`Atem.Overseer_0.3.0_x64-setup.exe`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_x64-setup.exe) | 30 MB |
+| x64 · .exe installer | [`Atem.Overseer_0.3.1_x64-setup.exe`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/Atem.Overseer_0.3.1_x64-setup.exe) | 30 MB |
 
 </details>
 
@@ -113,8 +113,8 @@ Behind each tile's ⚙ (gear):
 
 | Build | Download | Size |
 | --- | --- | --- |
-| x64 · .deb package (Debian/Ubuntu) | [`Atem.Overseer_0.3.0_amd64.deb`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer_0.3.0_amd64.deb) | 57 MB |
-| x64 · .rpm package (Fedora/RHEL) | [`Atem.Overseer-0.3.0-1.x86_64.rpm`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.0/Atem.Overseer-0.3.0-1.x86_64.rpm) | 58 MB |
+| x64 · .deb package (Debian/Ubuntu) | [`Atem.Overseer_0.3.1_amd64.deb`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/Atem.Overseer_0.3.1_amd64.deb) | 57 MB |
+| x64 · .rpm package (Fedora/RHEL) | [`Atem.Overseer-0.3.1-1.x86_64.rpm`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.1/Atem.Overseer-0.3.1-1.x86_64.rpm) | 58 MB |
 
 </details>
 
@@ -124,7 +124,7 @@ Also in this release:
 
 All builds, checksums and release notes: [github.com/stoatworks-labs/atem-overseer/releases](https://github.com/stoatworks-labs/atem-overseer/releases).
 
-The Windows builds are unsigned, so SmartScreen warns once — see [Windows SmartScreen & Defender Firewall](#windows-smartscreen--defender-firewall) for the one-time click-through.
+macOS builds are signed and notarised and open normally. The Windows builds are unsigned, so SmartScreen warns once — see [Windows SmartScreen & Defender Firewall](#windows-smartscreen--defender-firewall) for the one-time click-through.
 
 <!-- downloads:end -->
 
