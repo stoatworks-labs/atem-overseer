@@ -81,3 +81,10 @@ likely to match reality, so don't let them be described as proven.
   does **not** unquarantine its payload — helpers are SIGKILLed silently.
 - Multi-platform release CI; cross-compile macOS x86_64 on `macos-14` — never `macos-13`.
 - Public repo. "Commit" means commit **and** push.
+
+## Notes
+
+`docs/NOTES.md` carries this repo's working notes — current status, decisions
+already made, and the traps that have actually bitten. Read it before changing
+anything non-obvious. Cross-cutting fleet knowledge lives in
+[fleet-notes](https://github.com/stoatworks-labs/fleet-notes).
