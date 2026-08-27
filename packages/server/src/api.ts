@@ -52,6 +52,18 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
    * current behaviour rather than a considered design, and docs/API.md
    * documents it as such. If you split the statuses, update that doc.
    */
+
+  /**
+   * Express 5 types a path parameter as `string | string[]`, because
+   * path-to-regexp v8 allows a pattern to repeat. None of the routes here
+   * repeat -- every `:id` matches exactly one segment -- so the array case
+   * cannot arise. Narrowed once here rather than cast at a dozen call sites.
+   */
+  const param = (req: express.Request, name: string): string => {
+    const v = req.params[name];
+    return Array.isArray(v) ? v[0] : v;
+  };
+
   const asyncH =
     (fn: (req: express.Request, res: express.Response) => Promise<unknown>) =>
     (req: express.Request, res: express.Response) =>
@@ -89,7 +101,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.delete(
     '/api/devices/:id',
     asyncH(async (req, res) => {
-      await manager.removeDevice(req.params.id);
+      await manager.removeDevice(param(req, 'id'));
       res.json({ ok: true });
     }),
   );
@@ -108,7 +120,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.post(
     '/api/devices/:id/launch',
     asyncH(async (req, res) => {
-      const device = manager.config(req.params.id);
+      const device = manager.config(param(req, 'id'));
       if (!device) throw new Error('unknown device');
       const result = externalApps.launch(String(req.body.app), device);
       res.status(result.ok ? 200 : 400).json({ ...result, address: device.address });
@@ -130,16 +142,16 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.get(
     '/api/devices/:id/restreamer',
     asyncH(async (req, res) => {
-      if (!manager.config(req.params.id)) throw new Error('unknown device');
-      res.json(await restreamer.channel(req.params.id));
+      if (!manager.config(param(req, 'id'))) throw new Error('unknown device');
+      res.json(await restreamer.channel(param(req, 'id')));
     }),
   );
 
   app.post(
     '/api/devices/:id/restreamer/provision',
     asyncH(async (req, res) => {
-      if (!manager.config(req.params.id)) throw new Error('unknown device');
-      res.json(await restreamer.provision(req.params.id));
+      if (!manager.config(param(req, 'id'))) throw new Error('unknown device');
+      res.json(await restreamer.provision(param(req, 'id')));
     }),
   );
 
@@ -153,9 +165,9 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.put(
     '/api/devices/:id/restreamer/destinations',
     asyncH(async (req, res) => {
-      if (!manager.config(req.params.id)) throw new Error('unknown device');
+      if (!manager.config(param(req, 'id'))) throw new Error('unknown device');
       const destinations = Array.isArray(req.body?.destinations) ? req.body.destinations : [];
-      res.json(await restreamer.setDestinations(req.params.id, destinations));
+      res.json(await restreamer.setDestinations(param(req, 'id'), destinations));
     }),
   );
 
@@ -170,15 +182,15 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.put(
     '/api/devices/:id/restreamer/source',
     asyncH(async (req, res) => {
-      if (!manager.config(req.params.id)) throw new Error('unknown device');
-      res.json(await restreamer.setSource(req.params.id, req.body?.source));
+      if (!manager.config(param(req, 'id'))) throw new Error('unknown device');
+      res.json(await restreamer.setSource(param(req, 'id'), req.body?.source));
     }),
   );
 
   app.delete(
     '/api/devices/:id/restreamer',
     asyncH(async (req, res) => {
-      await restreamer.teardown(req.params.id);
+      await restreamer.teardown(param(req, 'id'));
       res.json({ ok: true });
     }),
   );
@@ -196,28 +208,28 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.post(
     '/api/devices/:id/record',
     asyncH(async (req, res) => {
-      await runCommand(manager, { type: 'record', id: req.params.id, action: req.body.action });
+      await runCommand(manager, { type: 'record', id: param(req, 'id'), action: req.body.action });
       res.json({ ok: true });
     }),
   );
   app.post(
     '/api/devices/:id/stream',
     asyncH(async (req, res) => {
-      await runCommand(manager, { type: 'stream', id: req.params.id, action: req.body.action });
+      await runCommand(manager, { type: 'stream', id: param(req, 'id'), action: req.body.action });
       res.json({ ok: true });
     }),
   );
   app.post(
     '/api/devices/:id/record-mode',
     asyncH(async (req, res) => {
-      await runCommand(manager, { type: 'recordMode', id: req.params.id, mode: req.body.mode });
+      await runCommand(manager, { type: 'recordMode', id: param(req, 'id'), mode: req.body.mode });
       res.json({ ok: true });
     }),
   );
   app.post(
     '/api/devices/:id/monitor-mute',
     asyncH(async (req, res) => {
-      await runCommand(manager, { type: 'monitorMute', id: req.params.id, muted: !!req.body.muted });
+      await runCommand(manager, { type: 'monitorMute', id: param(req, 'id'), muted: !!req.body.muted });
       res.json({ ok: true });
     }),
   );
@@ -240,10 +252,10 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.post(
     '/api/devices/:id/streaming-service',
     asyncH(async (req, res) => {
-      const runner = manager.get(req.params.id);
+      const runner = manager.get(param(req, 'id'));
       if (!runner) throw new Error('unknown device');
       if (!runner.setStreamingService) throw new Error('device does not support remote streaming config');
-      await runner.setStreamingService(streamingServiceFor(cfg, req.params.id));
+      await runner.setStreamingService(streamingServiceFor(cfg, param(req, 'id')));
       res.json({ ok: true });
     }),
   );
@@ -279,7 +291,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.get(
     '/api/devices/:id/media',
     asyncH(async (req, res) => {
-      const runner = manager.get(req.params.id);
+      const runner = manager.get(param(req, 'id'));
       if (!runner) throw new Error('unknown device');
       res.json(runner.mediaPool());
     }),
@@ -288,7 +300,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   app.post(
     '/api/devices/:id/media/assign',
     asyncH(async (req, res) => {
-      const runner = manager.get(req.params.id);
+      const runner = manager.get(param(req, 'id'));
       if (!runner) throw new Error('unknown device');
       const { playerIndex, sourceType, slotIndex } = req.body;
       await runner.assignMediaPlayer(Number(playerIndex), sourceType, Number(slotIndex));
@@ -311,7 +323,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
     '/api/devices/:id/media/still',
     upload.single('data'),
     asyncH(async (req, res) => {
-      const runner = manager.get(req.params.id);
+      const runner = manager.get(param(req, 'id'));
       if (!runner) throw new Error('unknown device');
       if (!req.file) throw new Error('missing RGBA payload');
       const slotIndex = Number(req.body.slotIndex);
