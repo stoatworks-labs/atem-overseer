@@ -1,6 +1,6 @@
 {
   "name": "@av/restreamer",
-  "version": "0.2.0",
+  "version": "0.3.3",
   "private": true,
   "description": "Portable datarhei Core / Restreamer client + split-channel manager (fan a single ingest out to a monitor copy plus N egress destinations). No framework coupling — drop into any Node app.",
   "license": "MIT",
