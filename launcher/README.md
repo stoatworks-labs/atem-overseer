@@ -40,3 +40,13 @@ To stage a Node runtime for a different platform, set `NODE_PLATFORM`
 The embedded runtime (`src-tauri/node[.exe]`) and app tree
 (`src-tauri/atem-overseer-app/`) are produced by `prepare.sh` and git-ignored;
 they ship inside the bundle.
+
+## The shell
+
+The panel/tray shell (`src/`, `src-tauri/src/`, `src-tauri/crates/`,
+`Cargo.lock`) is a file-for-file copy of
+[av-launcher](https://github.com/stoatworks-labs/av-launcher) at `2c83ad7`;
+only `src-tauri/launcher.toml` (config + theme), `tauri.conf.json`,
+`Info.plist`, `entitlements.plist`, the icons and `scripts/prepare.sh` are
+app-specific. Refresh the shell by copying those files from a newer
+av-launcher checkout, not by editing them here.
