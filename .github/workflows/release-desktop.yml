@@ -1,21 +1,27 @@
 name: release-desktop
 
 # Builds the Atem Overseer desktop tray app (av-launcher shell + embedded Node
-# runtime + built app) for macOS (arm64 + x86_64), Windows (x86_64) and Linux
-# (x86_64), and attaches the installers to the release.
+# runtime + built app) for macOS (one universal build, Apple Silicon + Intel), Windows
+# (x86_64) and Linux (x86_64), and attaches the installers to the release.
 #
-# macOS x86_64 is cross-compiled on the Apple-Silicon runner (macos-14) — the
-# Intel macOS runners are retired, so we never use macos-13.
+# macOS is built once on the Apple-Silicon runner as universal-apple-darwin:
+# both slices of the launcher are compiled and lipo'd by Tauri, and the
+# embedded Node runtime is lipo'd by launcher/scripts/prepare.sh
+# (NODE_PLATFORM=darwin-universal). The native Node addons come from
+# pkg-prebuilds, which ships one prebuilt binary per architecture inside the
+# npm package and picks by os.arch() at run time, so the same app tree serves
+# both slices; the gate below checks every Mach-O in the bundle for exactly
+# that shape. The Intel macOS runners are retired, so macos-13 is never used.
 #
-# Installers are unsigned by default. If the Apple signing/notarization secrets
-# are configured (see launcher/SIGNING.md) the macOS jobs produce a signed +
-# notarized build. Required secrets: APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD,
-# APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID.
+# The macOS bundles leave here ad-hoc signed. The Developer ID key never
+# leaves the author's Mac: a watcher there re-signs, notarises and re-uploads
+# every new release's macOS assets within a few minutes (stoatworks-backend,
+# release/auto-sign-watch.sh). Nothing in this workflow needs a secret.
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to attach installers to (e.g. v0.1.0)'
+        description: 'Release tag to attach installers to (e.g. v0.1.0); an unpushed tag is a dry run'
         required: true
   push:
     tags: ['v*']
@@ -31,10 +37,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: macos-aarch64,  os: macos-14,       node_platform: darwin-arm64, rust_target: aarch64-apple-darwin,  tauri_target: aarch64-apple-darwin }
-          - { name: macos-x86_64,   os: macos-14,       node_platform: darwin-x64,   rust_target: x86_64-apple-darwin,   tauri_target: x86_64-apple-darwin }
-          - { name: windows-x86_64, os: windows-latest, node_platform: win-x64,      rust_target: x86_64-pc-windows-msvc }
-          - { name: linux-x86_64,   os: ubuntu-22.04,   node_platform: linux-x64,    rust_target: x86_64-unknown-linux-gnu }
+          # universal-apple-darwin is a Tauri bundling target, not a rustup one:
+          # rust_targets is what rustup installs, tauri_target what tauri build
+          # is given.
+          - { name: macos-universal, os: macos-14,       node_platform: darwin-universal, rust_targets: 'aarch64-apple-darwin,x86_64-apple-darwin', tauri_target: universal-apple-darwin }
+          - { name: windows-x86_64, os: windows-latest, node_platform: win-x64,          rust_targets: x86_64-pc-windows-msvc }
+          - { name: linux-x86_64,   os: ubuntu-22.04,   node_platform: linux-x64,        rust_targets: x86_64-unknown-linux-gnu }
     steps:
       - uses: actions/checkout@v7
 
@@ -44,22 +52,13 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust_target }}
+          targets: ${{ matrix.rust_targets }}
 
       - name: Linux system dependencies
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Decide macOS signing
-        id: cfg
-        if: startsWith(matrix.os, 'macos')
-        shell: bash
-        env:
-          CERT: ${{ secrets.APPLE_CERTIFICATE }}
-        run: |
-          if [ -n "$CERT" ]; then echo "signing=true" >> "$GITHUB_OUTPUT"; else echo "signing=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Install launcher deps
         run: cd launcher && npm ci
@@ -70,46 +69,11 @@ jobs:
           NODE_PLATFORM: ${{ matrix.node_platform }}
         run: cd launcher && bash scripts/prepare.sh
 
-      - name: Import Apple signing certificate
-        if: startsWith(matrix.os, 'macos') && steps.cfg.outputs.signing == 'true'
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
-          security create-keychain -p "$APPLE_CERTIFICATE_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$APPLE_CERTIFICATE_PASSWORD" "$KEYCHAIN"
-          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security list-keychain -d user -s "$KEYCHAIN" login.keychain-db
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$APPLE_CERTIFICATE_PASSWORD" "$KEYCHAIN" >/dev/null
-          rm -f "$RUNNER_TEMP/cert.p12"
-
-      - name: Pre-sign embedded Node (macOS)
-        if: startsWith(matrix.os, 'macos') && steps.cfg.outputs.signing == 'true'
-        env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-        run: cd launcher && bash scripts/sign-embedded.sh
-
-      - name: Build desktop bundle (signed macOS)
-        if: startsWith(matrix.os, 'macos') && steps.cfg.outputs.signing == 'true'
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        # --bundles app: left to Tauri, the dmg is bundled inside this step, so
-        # hdiutil runs while the cargo intermediates are still on disk — which
-        # is what ran the x86_64 runner out of space. Asking only for the .app
-        # moves the image behind the reclaim step below, built from the same
-        # staged bundle as the .pkg, the way the rest of the fleet does it.
-        run: cd launcher && npm run tauri build -- --bundles app --target ${{ matrix.tauri_target }}
-
-      - name: Build desktop bundle (unsigned macOS)
-        if: startsWith(matrix.os, 'macos') && steps.cfg.outputs.signing != 'true'
+      - name: Build desktop bundle (macOS)
+        if: startsWith(matrix.os, 'macos')
+        # --bundles app only: the .dmg and .pkg are built below from a staged
+        # copy of the bundle, after the cargo intermediates are reclaimed —
+        # hdiutil ran the runner out of space when the image was made in here.
         run: cd launcher && npm run tauri build -- --bundles app --target ${{ matrix.tauri_target }}
 
       - name: Build desktop bundle (Windows)
@@ -121,28 +85,73 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: cd launcher && npm run tauri build -- --bundles deb rpm
 
-      # The x86_64 job is a cross-compile, so its target directory holds both
-      # host and target artefacts — and the embedded Node runtime (~111 MB) is
-      # then copied into the .app, the staging dir and the disk image in turn.
-      # That was enough to exhaust the runner: hdiutil failed with "No space
-      # left on device" while the aarch64 job, with the same payload, was fine.
-      # The bundle is already built by this point; the intermediates are not
-      # needed again.
+      # Two full compiles' worth of intermediates plus an embedded Node runtime
+      # copied into the .app, the staging dir and the disk image in turn was
+      # enough to run a runner out of space during hdiutil. The bundle is built
+      # by this point; nothing below needs the intermediates.
       - name: Reclaim disk before packaging
         if: startsWith(matrix.os, 'macos')
         shell: bash
         run: |
-          target="launcher/src-tauri/target/${{ matrix.tauri_target }}/release"
-          rm -rf "$target/build" "$target/deps" "$target/incremental" "$target/.fingerprint"
+          for t in aarch64-apple-darwin x86_64-apple-darwin ${{ matrix.tauri_target }}; do
+            target="launcher/src-tauri/target/$t/release"
+            rm -rf "$target/build" "$target/deps" "$target/incremental" "$target/.fingerprint"
+          done
           df -h / | tail -1
+
+      # Proof that "universal" is universal, for EVERY Mach-O in the bundle. A
+      # fat launcher around a thin embedded runtime launches on an Intel Mac and
+      # dies when it starts its server, which is worse than not shipping for
+      # Intel at all — the RFutils v0.4.3 failure. Captured and matched with
+      # `case`, never piped into grep: steps run as `bash -eo pipefail`, so a
+      # grep that exits on its first match SIGPIPEs lipo and fails the step
+      # BECAUSE the match was found.
+      - name: Verify the macOS launcher is universal
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        run: |
+          appdir="launcher/src-tauri/target/${{ matrix.tauri_target }}/release/bundle/macos"
+          app="Atem Overseer.app"
+          [ -d "$appdir/$app" ] || { echo "no .app produced" >&2; exit 1; }
+          fat=0; paired=0
+          while IFS= read -r f; do
+            __archs="$( lipo -archs "$f" 2>/dev/null )" || continue
+            [ -n "$__archs" ] || continue
+            rel="${f#$appdir/$app/}"
+            case "$__archs" in
+              *arm64*x86_64*|*x86_64*arm64*)
+                fat=$((fat+1)); echo "$rel: $__archs" ;;
+              *)
+                # A pkg-prebuilds addon is one thin file per architecture,
+                # chosen by os.arch() at run time: universal means the other
+                # slice's prebuild sits in the sibling directory.
+                case "$rel" in
+                  *prebuilds/*-darwin-arm64/*) other="${f/-darwin-arm64\//-darwin-x64/}" ;;
+                  *prebuilds/*-darwin-x64/*)   other="${f/-darwin-x64\//-darwin-arm64/}" ;;
+                  *) echo "thin Mach-O outside a prebuilds pair: $rel ($__archs)" >&2; exit 1 ;;
+                esac
+                [ -f "$other" ] || { echo "$rel has no prebuild for the other architecture" >&2; exit 1; }
+                paired=$((paired+1)); echo "$rel: $__archs (paired)" ;;
+            esac
+          done < <(find "$appdir/$app" -type f \( -perm -u+x -o -name '*.node' \))
+          echo "universal Mach-Os: $fat, paired thin prebuilds: $paired"
+          # The two that must be fat, by name — a find that matched nothing
+          # would otherwise pass in silence.
+          for must in "Contents/MacOS/av-launcher" "Contents/Resources/node"; do
+            __archs="$( lipo -archs "$appdir/$app/$must" )"
+            case "$__archs" in
+              *arm64*x86_64*|*x86_64*arm64*) ;;
+              *) echo "$must is not universal: $__archs" >&2; exit 1 ;;
+            esac
+          done
 
       - name: Installers (macOS)
         if: startsWith(matrix.os, 'macos')
         shell: bash
-        # Tauri has no pkg bundler, so the installer is built from the .app it
-        # produced — the same helper the rest of the fleet uses, so the artefact
-        # matches. Only ad-hoc sign when there is no Developer ID configured:
-        # re-signing a properly signed and notarised bundle would invalidate it.
+        # Tauri has no pkg bundler and its dmg step drives Finder, which fails
+        # headless, so both come from the fleet's release helper and the same
+        # staged .app. Ad-hoc signed here; the Developer ID signature and
+        # notarisation are applied post-hoc by the watcher on the author's Mac.
         run: |
           source scripts/release-lib.sh
           version="${{ github.event.inputs.tag || github.ref_name }}"
@@ -151,17 +160,12 @@ jobs:
           rl_init "Atem Overseer" atem-overseer "$version" com.stoatworks.atem-overseer "$GITHUB_WORKSPACE/out"
           appdir="launcher/src-tauri/target/${{ matrix.tauri_target }}/release/bundle/macos"
           app="Atem Overseer.app"
-          if [ ! -d "$appdir/$app" ]; then echo "no .app produced, skipping installers"; exit 0; fi
+          [ -d "$appdir/$app" ] || { echo "no .app produced" >&2; exit 1; }
           stage="$RUNNER_TEMP/stage-pkg"
           rm -rf "$stage"; mkdir -p "$stage" "$GITHUB_WORKSPACE/out"
           cp -R "$appdir/$app" "$stage/"
-          if [ "${{ steps.cfg.outputs.signing }}" != "true" ]; then
-            rl_adhoc_sign "$stage/$app"
-          fi
+          rl_adhoc_sign "$stage/$app"
           rl_pkg "${{ matrix.name }}" "$stage" --app "$app"
-          # Tauri's dmg bundler is skipped above, so the image is built here from
-          # the same staged .app as the .pkg. This renames the artefact from
-          # Atem.Overseer_<v>_x64.dmg to the fleet's slug-version-label form.
           rl_dmg "${{ matrix.name }}" "$stage" --app "$app"
 
       - name: Collect installers
@@ -177,8 +181,12 @@ jobs:
         with:
           name: atem-overseer-desktop-${{ matrix.name }}
           path: out/*
-          if-no-files-found: warn
+          if-no-files-found: error
 
+      # A dispatch naming a tag that has not been pushed is a dry run: every
+      # platform builds and the installers are kept as workflow artifacts, and
+      # nothing is published. That is how a change to this workflow is proven
+      # on all three runners before the next real release.
       - name: Attach installers to the release
         if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != ''
         shell: bash
@@ -186,12 +194,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          # Create the release if nothing has yet. This used to poll for one for five
-          # minutes and then fail with "release not found", which is exactly what
-          # happens whenever the job that creates it is still queued behind a busy
-          # runner queue -- the build phase above reads green and the upload is the
-          # only thing that fails. --verify-tag refuses to invent a tag that is not
-          # pushed, and the `||` keeps it harmless when another job wins the race.
+          if ! git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+            echo "tag $TAG is not pushed — dry run, installers are in the workflow artifacts"
+            exit 0
+          fi
           extra=""
           case "$TAG" in *-*) extra="--prerelease" ;; esac
           gh release view "$TAG" >/dev/null 2>&1 || \

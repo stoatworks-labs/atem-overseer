@@ -15,7 +15,7 @@
 # release matrix does exactly that.
 #
 # NODE_PLATFORM overrides the embedded runtime arch (win-x64 / darwin-arm64 /
-# darwin-x64 / linux-x64 / linux-arm64); defaults to the host.
+# darwin-x64 / darwin-universal / linux-x64 / linux-arm64); defaults to the host.
 set -euo pipefail
 
 NODE_VERSION="v22.20.0"
@@ -85,6 +85,28 @@ if [[ "$PLATFORM" == win-* ]]; then
   cp "$TAURI/$TARBALL/node.exe" "$TAURI/node.exe"
   rm -rf "$TAURI/$TARBALL" "$TAURI/node.zip"
   echo "prepared: $TAURI/node.exe + $APP"
+elif [[ "$PLATFORM" == darwin-universal ]]; then
+  # One macOS build for both architectures: fetch both official runtimes and
+  # lipo them. tauri.conf.json bundles resources by the glob "node*", so the two
+  # thin copies are removed once the fat one exists — anything left here would
+  # ship inside the app. The native addons need nothing: pkg-prebuilds carries
+  # one prebuild per architecture in the npm package and picks by os.arch().
+  for arch in arm64 x64; do
+    TARBALL="node-$NODE_VERSION-darwin-$arch"
+    curl -sL "https://nodejs.org/dist/$NODE_VERSION/$TARBALL.tar.gz" -o "$TAURI/node.tar.gz"
+    tar xzf "$TAURI/node.tar.gz" -C "$TAURI"
+    cp "$TAURI/$TARBALL/bin/node" "$TAURI/node.$arch"
+    rm -rf "$TAURI/$TARBALL" "$TAURI/node.tar.gz"
+  done
+  lipo -create "$TAURI/node.arm64" "$TAURI/node.x64" -output "$TAURI/node"
+  rm -f "$TAURI/node.arm64" "$TAURI/node.x64"
+  chmod +x "$TAURI/node"
+  __archs="$( lipo -archs "$TAURI/node" )"
+  case "$__archs" in
+    *arm64*x86_64*|*x86_64*arm64*) ;;
+    *) echo "embedded node is not universal: $__archs" >&2; exit 1 ;;
+  esac
+  echo "prepared: $TAURI/node ($__archs) + $APP"
 else
   TARBALL="node-$NODE_VERSION-$PLATFORM"
   curl -sL "https://nodejs.org/dist/$NODE_VERSION/$TARBALL.tar.gz" -o "$TAURI/node.tar.gz"
