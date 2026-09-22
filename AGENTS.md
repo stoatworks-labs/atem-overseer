@@ -68,12 +68,19 @@ timidity — a fleet dashboard sends commands to switchers that may be live on a
 
 ## 6. Status — be precise about it
 
-Developed and verified end-to-end **against the built-in simulated fleet (`--mock`)**. It has
-**not** been run against live ATEM hardware.
+Developed and verified end-to-end **against the built-in simulated fleet (`--mock`)**, and
+run against live ATEM hardware on two dates: 2026-07-17 (read-only, then streaming ingest
+and record actuation) and 2026-09-22 (a bench session against a Mini Extreme ISO).
+`docs/NOTES.md` records what each one actually proved.
 
-The README specifically calls out transport, streaming and media-upload behaviour as things
-to validate against your own switchers first. Those are the paths where a simulator is least
-likely to match reality, so don't let them be described as proven.
+Still **unproven on hardware: media/still upload.** The README calls out transport,
+streaming and media-upload behaviour as things to validate against your own switchers
+first; transport and streaming now have live evidence behind them, media upload does not,
+so don't let it be described as proven.
+
+Live hardware has a habit of contradicting the simulator rather than agreeing with it —
+every release since v0.3.3 has been dead or crashing in a way no mock run showed. Run
+`npm run smoke` after a build, and treat a green typecheck as evidence of nothing.
 
 ## 7. Conventions
 
