@@ -12,7 +12,7 @@
 window.STOATWORKS_ABOUT = Object.assign({
   "name": "ATEM Overseer",
   "slug": "atem-overseer",
-  "version": "v0.3.6",
+  "version": "v0.3.7",
   "hook": "ATEM fleet dashboard",
   "licence": "MIT",
   "guide": "https://stoatworks-labs.com/software/atem-overseer/guide/",
