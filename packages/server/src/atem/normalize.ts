@@ -93,7 +93,23 @@ export function normalize(state: AtemState, meta: NormalizeMeta): DeviceSnapshot
       isWorkingSet: workingSets.has(d.diskId),
     }));
 
-  const mode: RecordMode = rec?.properties.recordInAllCameras ? 'iso' : 'pgm';
+  /**
+   * ISO record mode is TWO different fields on two different commands, and
+   * this used to read the one the app does not write:
+   *
+   *   recording.recordAllInputs          <- RISO, what setEnableISORecording sends
+   *   recording.properties.recordInAllCameras <- CRMS/RMSu recording settings
+   *
+   * A real Mini Extreme ISO on 2026-09-22 reported recordAllInputs: true and
+   * recordInAllCameras: false at the same time, so the tile said "PGM only"
+   * for a switcher set to record every input, and the ISO/PGM buttons
+   * reported success while the display never moved.
+   *
+   * Prefer the field the write path actually sets. Models that never send
+   * RISO leave it undefined, and those fall back to the settings flag.
+   */
+  const mode: RecordMode =
+    (rec?.recordAllInputs ?? rec?.properties.recordInAllCameras) ? 'iso' : 'pgm';
 
   const mediaPlayers: MediaPlayerAssignment[] = (state.media?.players ?? [])
     .map((p, i): MediaPlayerAssignment | null => {

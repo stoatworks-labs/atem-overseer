@@ -159,23 +159,49 @@ export class RealDevice extends EventEmitter implements DeviceRunner {
   }
 
   // ---- commands ----
+
+  /**
+   * Refuse a command when the switcher is not actually connected.
+   *
+   * Without this, every write below reports success against a switcher that
+   * was never reached. atem-connection only rejects with "Socket process is
+   * not open" before `connect()` is called; once it has been — and the manager
+   * calls it for every configured device at boot, then retries forever — a
+   * command against an address that never answers is accepted and its promise
+   * RESOLVES. The route returns `{ ok: true }` and the gear panel says "Local
+   * streaming service applied to switcher" for a device that is greyed out and
+   * offline in the same window.
+   *
+   * Verified against 192.168.12.104 on 2026-09-22: a reachable host that is
+   * not an ATEM, `connected` never fired, setStreamingService resolved.
+   */
+  private connected(what: string): void {
+    if (this.connection === 'connected') return;
+    throw new Error(`${this.meta.name || this.id} is ${this.connection} — cannot ${what}`);
+  }
+
   async setRecording(on: boolean): Promise<void> {
+    this.connected(on ? 'start recording' : 'stop recording');
     await (on ? this.atem.startRecording() : this.atem.stopRecording());
   }
 
   async setStreaming(on: boolean): Promise<void> {
+    this.connected(on ? 'start streaming' : 'stop streaming');
     await (on ? this.atem.startStreaming() : this.atem.stopStreaming());
   }
 
   async setRecordMode(mode: RecordMode): Promise<void> {
+    this.connected(`set record mode to ${mode}`);
     await this.atem.setEnableISORecording(mode === 'iso');
   }
 
   async setMonitorMute(muted: boolean): Promise<void> {
+    this.connected('set the monitor mute');
     await this.atem.setFairlightAudioMixerMonitorProps({ inputMasterMuted: muted });
   }
 
   async assignMediaPlayer(playerIndex: number, sourceType: 'still' | 'clip', slotIndex: number): Promise<void> {
+    this.connected(`assign media player ${playerIndex + 1}`);
     await this.atem.setMediaPlayerSource(
       sourceType === 'still'
         ? { sourceType: Enums.MediaSourceType.Still, stillIndex: slotIndex }
@@ -185,11 +211,13 @@ export class RealDevice extends EventEmitter implements DeviceRunner {
   }
 
   async uploadStill(slotIndex: number, name: string, data: Buffer): Promise<void> {
+    this.connected(`upload a still to slot ${slotIndex + 1}`);
     // `data` is raw RGBA at the switcher resolution (converted browser-side).
     await this.atem.uploadStill(slotIndex, data, name, '');
   }
 
   async setStreamingService(svc: StreamingServiceInput): Promise<void> {
+    this.connected('apply the streaming service');
     await this.atem.setStreamingService({
       serviceName: svc.serviceName,
       url: svc.url,
