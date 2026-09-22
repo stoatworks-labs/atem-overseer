@@ -16,7 +16,8 @@
     "dev:web": "npm run dev --workspace @atem-overseer/web",
     "build": "npm run build:libs && npm run build --workspace @atem-overseer/web && npm run build --workspace @atem-overseer/server",
     "typecheck": "npm run build:libs && npm run typecheck --workspace @atem-overseer/server && npm run typecheck --workspace @atem-overseer/web",
-    "start": "npm run start --workspace @atem-overseer/server"
+    "start": "npm run start --workspace @atem-overseer/server",
+    "smoke": "node scripts/smoke-boot.mjs"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
