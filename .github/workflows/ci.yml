@@ -27,13 +27,23 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The smoke-test publishes a real stream to the RTMP ingest, and needs a
+      # publisher to do it with. GitHub's ubuntu image has no ffmpeg, and the
+      # script SKIPS the publish check rather than failing when it is missing —
+      # so without this the ingest half is silently untested, which is exactly
+      # how the v4 postPublish crash reached a release.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
       # Typecheck and build both pass on a server that cannot start: a route
       # string is valid TypeScript whatever it says, and Express only rejects
       # it when the route is registered. That is how v0.3.3 through v0.3.6 all
-      # shipped unable to boot at all. So start the built server the way the
-      # packaged app does — node on dist/index.js, not npm start — and ask it
-      # for pages. The script preflights the ports it needs (4700/1935/8000)
-      # and refuses to run from a path with a dot segment in it, so a failure
-      # here means the server, not the runner.
+      # shipped unable to boot at all. They also both pass on a server that
+      # dies the moment a switcher streams to it, which is how v0.3.7 shipped.
+      # So start the built server the way the packaged app does — node on
+      # dist/index.js, not npm start — ask it for pages, then publish to it.
+      # The script preflights the ports it needs (4700/1935/8000) and refuses
+      # to run from a path with a dot segment in it, so a failure here means
+      # the server, not the runner.
       - name: Boot smoke-test
         run: node scripts/smoke-boot.mjs
