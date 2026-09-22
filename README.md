@@ -85,15 +85,15 @@ Behind each tile's ⚙ (gear):
 
 ## Download
 
-**[v0.3.6](https://github.com/stoatworks-labs/atem-overseer/releases/tag/v0.3.6)** — prebuilt for macOS, Windows and Linux. Pick your platform:
+**[v0.3.8](https://github.com/stoatworks-labs/atem-overseer/releases/tag/v0.3.8)** — prebuilt for macOS, Windows and Linux. Pick your platform:
 
 <details>
 <summary><b>macOS</b> — Universal (Apple Silicon + Intel)</summary>
 
 | Build | Download | Size |
 | --- | --- | --- |
-| Universal (Apple Silicon + Intel) · .dmg disk image | [`atem-overseer-0.3.6-macos-universal.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.6/atem-overseer-0.3.6-macos-universal.dmg) | 91 MB |
-| Universal (Apple Silicon + Intel) · .pkg installer | [`atem-overseer-0.3.6-macos-universal.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.6/atem-overseer-0.3.6-macos-universal.pkg) | 91 MB |
+| Universal (Apple Silicon + Intel) · .dmg disk image | [`atem-overseer-0.3.8-macos-universal.dmg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.8/atem-overseer-0.3.8-macos-universal.dmg) | 117 MB |
+| Universal (Apple Silicon + Intel) · .pkg installer | [`atem-overseer-0.3.8-macos-universal.pkg`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.8/atem-overseer-0.3.8-macos-universal.pkg) | 92 MB |
 
 </details>
 
@@ -102,7 +102,7 @@ Behind each tile's ⚙ (gear):
 
 | Build | Download | Size |
 | --- | --- | --- |
-| x64 · .exe installer | [`Atem.Overseer_0.3.6_x64-setup.exe`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.6/Atem.Overseer_0.3.6_x64-setup.exe) | 31 MB |
+| x64 · .exe installer | [`Atem.Overseer_0.3.8_x64-setup.exe`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.8/Atem.Overseer_0.3.8_x64-setup.exe) | 31 MB |
 
 </details>
 
@@ -111,14 +111,14 @@ Behind each tile's ⚙ (gear):
 
 | Build | Download | Size |
 | --- | --- | --- |
-| x64 · .deb package (Debian/Ubuntu) | [`Atem.Overseer_0.3.6_amd64.deb`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.6/Atem.Overseer_0.3.6_amd64.deb) | 60 MB |
-| x64 · .rpm package (Fedora/RHEL) | [`Atem.Overseer-0.3.6-1.x86_64.rpm`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.6/Atem.Overseer-0.3.6-1.x86_64.rpm) | 60 MB |
+| x64 · .deb package (Debian/Ubuntu) | [`Atem.Overseer_0.3.8_amd64.deb`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.8/Atem.Overseer_0.3.8_amd64.deb) | 60 MB |
+| x64 · .rpm package (Fedora/RHEL) | [`Atem.Overseer-0.3.8-1.x86_64.rpm`](https://github.com/stoatworks-labs/atem-overseer/releases/download/v0.3.8/Atem.Overseer-0.3.8-1.x86_64.rpm) | 60 MB |
 
 </details>
 
 Also in this release:
 
-- [`atem-overseer-node-bundle.tar.gz`](https://github.com/stoatworks-labs/atem-overseer/releases/latest/download/atem-overseer-node-bundle.tar.gz) — Node bundle (run it yourself), 236 KB
+- [`atem-overseer-node-bundle.tar.gz`](https://github.com/stoatworks-labs/atem-overseer/releases/latest/download/atem-overseer-node-bundle.tar.gz) — Node bundle (run it yourself), 238 KB
 
 All builds, checksums and release notes: [github.com/stoatworks-labs/atem-overseer/releases](https://github.com/stoatworks-labs/atem-overseer/releases).
 
