@@ -36,6 +36,9 @@ const HTTP_PORT = PORTS[0][0];
 const BOOT_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 15_000;
 const POLL_MS = 250;
+/** How long the publish check streams for, and how long it waits for flv back. */
+const PUBLISH_SECONDS = 8;
+const FLV_PULL_TIMEOUT_MS = 10_000;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /**
@@ -73,6 +76,7 @@ async function main() {
     await waitForBoot(server);
     say(`listening on ${HOST}:${HTTP_PORT}`);
     await checkRoutes(server);
+    await checkPublish(server);
     await shutdownCleanly(server);
     say('shut down cleanly on SIGTERM');
   } catch (err) {
@@ -294,6 +298,118 @@ async function checkRoutes(server) {
     }
 
     say(`GET ${check.path} -> 200 (${check.what})`);
+  }
+}
+
+/**
+ * Publish to the RTMP ingest and prove the server survives it.
+ *
+ * Serving every HTTP route says nothing about the ingest, and the ingest is
+ * the half an operator hits second: they point a switcher at the host, hit
+ * Stream, and the dashboard dies. node-media-server v4 hands its publish
+ * events ONE session object where v2 passed `(id, streamPath, args)`, and the
+ * types for it are hand-written in-repo — so a handler still reading the v2
+ * arguments typechecks, builds, boots, serves, and then throws
+ * `Cannot read properties of undefined (reading 'split')` inside the RTMP
+ * parser's synchronous emit. That is an uncaughtException: the whole
+ * dashboard goes down on the first frame the switcher sends.
+ *
+ * Needs ffmpeg for the publisher. Skipped with a note where there is none,
+ * rather than failing a build for a missing tool.
+ */
+async function checkPublish(server) {
+  if (!hasFfmpeg()) {
+    say('ffmpeg not found — SKIPPING the publish check (the RTMP ingest is untested)');
+    return;
+  }
+
+  const key = 'smoke-cam';
+  const publisher = spawn(
+    'ffmpeg',
+    [
+      '-hide_banner', '-loglevel', 'error',
+      '-re', '-f', 'lavfi', '-i', 'testsrc=size=320x180:rate=15',
+      '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+      '-t', String(PUBLISH_SECONDS),
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-g', '15',
+      '-c:a', 'aac', '-f', 'flv',
+      `rtmp://${HOST}:${PORTS[1][0]}/live/${key}`,
+    ],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
+  let ffmpegErr = '';
+  publisher.stderr.setEncoding('utf8');
+  publisher.stderr.on('data', (d) => {
+    ffmpegErr += d;
+  });
+
+  // Long enough for the publish to be established and a GOP to be cached, so
+  // the flv pull below has a header to send. Well inside the publish window.
+  await sleep(2_000);
+
+  if (server.exited) {
+    throw new Error(
+      `the server died while a stream was publishing to the RTMP ingest (${describeExit(server)}).\n` +
+        `  Every HTTP route answered first, so this is the ingest path, not the app:\n` +
+        `  check the node-media-server event handlers in packages/server/src/stream/mediaServer.ts\n` +
+        `  against the INSTALLED major — v4 passes one session object, v2 passed (id, streamPath, args).`,
+    );
+  }
+
+  const flv = await pullFlv(`http://${HOST}:${PORTS[2][0]}/live/${key}.flv`);
+  publisher.kill('SIGKILL');
+  await new Promise((done) => publisher.on('close', done));
+
+  if (!flv.ok) {
+    throw new Error(
+      `the server survived the publish but http-flv served nothing back: ${flv.why}\n` +
+        `  A tile plays ${`/live/<deviceId>.flv`} from the media port; without it every tile\n` +
+        `  stays NO SIGNAL however well the switcher is streaming.` +
+        (ffmpegErr ? `\n\n  ffmpeg said:\n  ${ffmpegErr.trim()}` : ''),
+    );
+  }
+
+  say(`published to rtmp://${HOST}:${PORTS[1][0]}/live/${key} and pulled it back as http-flv`);
+}
+
+function hasFfmpeg() {
+  try {
+    execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Read the start of a live http-flv stream and check the FLV signature. The
+ * response never ends on its own, so it is aborted as soon as enough has
+ * arrived to judge it.
+ */
+async function pullFlv(url) {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), FLV_PULL_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: abort.signal });
+    if (!res.ok) return { ok: false, why: `GET ${url} returned ${res.status}` };
+    const reader = res.body.getReader();
+    const { value, done } = await reader.read();
+    await reader.cancel().catch(() => {});
+    if (done || !value?.length) return { ok: false, why: `${url} closed without sending a byte` };
+    // An FLV stream opens with the three ASCII letters of its own name.
+    const signature = Buffer.from(value.slice(0, 3)).toString('latin1');
+    if (signature !== 'FLV') {
+      return { ok: false, why: `${url} sent ${value.length} bytes that are not FLV ("${signature}")` };
+    }
+    return { ok: true };
+  } catch (err) {
+    const why =
+      err.name === 'AbortError'
+        ? `${url} sent nothing within ${FLV_PULL_TIMEOUT_MS / 1000}s`
+        : `${url} failed: ${err.message}`;
+    return { ok: false, why };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
