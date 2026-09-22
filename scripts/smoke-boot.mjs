@@ -141,9 +141,10 @@ function portIsFree(port) {
     const probe = createServer();
     probe.once('error', () => done(false));
     probe.once('listening', () => probe.close(() => done(true)));
-    // 0.0.0.0, because that is what the server binds: a listener on any
-    // address would collide with it.
-    probe.listen(port, '0.0.0.0');
+    // No address, so the probe binds the way the server does — dual-stack
+    // wildcard. Probing 0.0.0.0 instead would miss an IPv6-only listener that
+    // the server itself would still collide with.
+    probe.listen(port);
   });
 }
 
