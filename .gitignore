@@ -5,6 +5,11 @@ dist/
 # against its --mock fleet and recording what it says.
 !demo/dist/
 .media/
+# node-media-server's publish-history store, created relative to the server's
+# working directory: packages/server for an npm workspace script (dev, start),
+# the repo root for a bare `node packages/server/dist/index.js`. Left
+# unanchored so it is ignored wherever the server was launched from.
+data/
 *.log
 .DS_Store
 atem-overseer.config.json
