@@ -336,7 +336,7 @@ export function createApi({ manager, cfg, webDist, discovery, externalApps, rest
   // ---- static web ----
   if (existsSync(webDist)) {
     app.use(express.static(webDist));
-    app.get('*', (_req, res) => res.sendFile(resolve(webDist, 'index.html')));
+    app.get('/{*splat}', (_req, res) => res.sendFile(resolve(webDist, 'index.html')));
   } else {
     app.get('/', (_req, res) =>
       res

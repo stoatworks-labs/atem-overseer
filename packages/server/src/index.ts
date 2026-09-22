@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createApi } from './api.js';
 import { DeviceManager } from './atem/manager.js';
@@ -16,13 +17,27 @@ const COLLECT_DIAGNOSTICS = process.argv.includes('--collect-diagnostics');
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const webDist = resolve(__dirname, '../../web/dist');
 
+/**
+ * npm_package_version is only set when the server is started through npm, which
+ * the packaged app does not do — it spawns node on dist/index.js directly. Read
+ * the manifest that ships beside dist/ so crash reports name the real version.
+ */
+function appVersion(): string {
+  if (process.env.npm_package_version) return process.env.npm_package_version;
+  try {
+    return JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8')).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
 async function main(): Promise<void> {
   // Before anything that can fail — including reading the config file — so a
   // failure during startup is logged and captured like any other.
   initDiag({
     app: 'atem-overseer',
     envPrefix: 'ATEM_OVERSEER',
-    version: process.env.npm_package_version ?? '0.2.0',
+    version: appVersion(),
     cwd: resolve(__dirname, '../../..'),
   });
 
