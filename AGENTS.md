@@ -46,6 +46,7 @@ npm run dev:web      # web only
 npm run build
 npm run typecheck
 npm start            # start the built server
+npm run smoke        # boot the built server and check it serves (what ci.yml runs)
 
 npm start -- --collect-diagnostics    # write one JSON file explaining the state of things
 npm run diag:crash-example --workspace @atem-overseer/server   # see what a crash report looks like
