@@ -26,9 +26,9 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "@types/multicast-dns": "^7.2.4",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.2",
     "@types/ws": "^8.5.13",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
