@@ -13,9 +13,10 @@ Download an installer from
 > Nothing needs to be installed — no Node, no separate checkout. Just download
 > and run.
 
-> **Unsigned builds.** By default the installers are unsigned. On macOS,
-> right-click the app → **Open** → **Open** once; on Windows, "More info" →
-> "Run anyway". See [SIGNING.md](SIGNING.md) to produce signed macOS builds.
+> **Signing.** Released macOS builds are signed and notarised, so they open
+> normally. The Windows installer is unsigned: "More info" → "Run anyway" once.
+> A copy you build yourself is unsigned; [SIGNING.md](SIGNING.md) covers what
+> that means on macOS.
 
 ## What it does
 

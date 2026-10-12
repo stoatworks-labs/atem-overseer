@@ -150,7 +150,9 @@ If you tighten any of them, update that doc.
 ## 7. Status — be precise about it
 
 Developed and verified end-to-end **against the built-in simulated fleet (`--mock`)**. It has
-**not** been run against live ATEM hardware.
+since been run against live ATEM hardware on two dates, 2026-07-17 and 2026-09-22
+(`docs/NOTES.md` records what each one proved). Media upload still hasn't been tried on
+hardware.
 
 The README specifically calls out **transport, streaming and media-upload** behaviour as things
 to validate against your own switchers first. Those are the paths where a simulator is least

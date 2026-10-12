@@ -18,7 +18,9 @@ The server exposes a REST API, a WebSocket channel, two XML documents and a JSON
 > reach port 4700, on switchers that may be live on air. There is no token, no session and no
 > TLS. Run it on a private production network only.
 
-> **Verified against the built-in `--mock` fleet, not live hardware.** Transport, streaming and
+> **Verified against the built-in `--mock` fleet, and on the bench against a real ATEM Mini
+> Extreme ISO (2026-07-17 and 2026-09-22), but never on a live show.** Media upload is still
+> unproven on hardware. Transport, streaming and
 > media-upload are the paths a simulator is least likely to match — validate those against your
 > own switcher models before relying on them.
 
