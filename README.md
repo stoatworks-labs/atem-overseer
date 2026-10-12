@@ -1,21 +1,22 @@
 # Atem Overseer
 
 > **AI-assisted project.** This codebase was created with [Claude Code](https://claude.com/claude-code)
-> (Anthropic), directed and reviewed by a human author. It was developed and
-> verified end-to-end against a built-in simulated switcher fleet (`--mock`), and
-> has since been **tested against real ATEM hardware in a lab** — but **never on a
-> live show**. Validate transport, streaming and media-upload behaviour against
-> your own switchers before relying on it for one.
+> (Anthropic), directed and reviewed by a human author. I developed and checked it end to
+> end against a built-in simulated switcher fleet (`--mock`), and it's since been **tested
+> against real ATEM hardware in a lab**, but **never on a live show**. Check the transport,
+> streaming and media-upload behaviour against your own switchers before you rely on it for
+> one.
 
-A browser-based dashboard for monitoring — and controlling — a fleet of
-Blackmagic ATEM switchers from one screen, styled after Blackmagic's own
-multiviewer.
+A browser dashboard for keeping an eye on (and controlling) a fleet of Blackmagic ATEM
+switchers from one screen, styled after Blackmagic's own multiviewer. Useful when the
+switchers are spread across several rooms and you'd rather not spend the day walking between
+them.
 
 [![Watch it running — 39 seconds](docs/video-thumb.png)](https://www.youtube.com/watch?v=zY5R1NHSDAk)
 
 *A 39-second tour, driven over the app's own HTTP API. The three switchers are the
-built-in `--mock` fleet, so their record/stream state is simulated — but the picture in
-the tiles is not: real test-pattern streams were pushed into the app's RTMP ingest, and
+built-in `--mock` fleet, so their record/stream state is simulated, but the picture in
+the tiles isn't: real test-pattern streams were pushed into the app's RTMP ingest, and
 what you see is the app receiving them.*
 
 ![Atem Overseer dashboard](docs/screenshots/dashboard.png)
@@ -24,11 +25,11 @@ what you see is the app receiving them.*
 record/stream status, live program-audio meters, drive time-remaining, ISO/PGM
 mode and transport controls.*
 
-**Click around it yourself: <https://atem-overseer-demo.stoatworks-labs.com>** — the
-real dashboard in your browser, replaying recorded telemetry from the `--mock`
-fleet, so the meters move and the timecode advances. Transport controls are
-inert there and say so; the server has to be on the network with your switchers
-to control anything. See [demo/README.md](demo/README.md).
+You can click around it yourself at <https://atem-overseer-demo.stoatworks-labs.com>. It's
+the dashboard in your browser, replaying recorded telemetry from the `--mock` fleet, so the
+meters move and the timecode runs. The transport controls do nothing there and say so,
+because the server has to be on the network with your switchers to control anything. See
+[demo/README.md](demo/README.md).
 
 ```mermaid
 flowchart LR
@@ -61,21 +62,21 @@ Point it at any number of ATEMs on your network and get, per device:
 - **Drive capacity / estimated time remaining** per disk, with working-set and low/critical warnings
 - **ISO vs PGM-only** record-mode indicator (and toggle)
 - **Stereo program audio metering** (Fairlight levels, peak-hold) that runs at display rate
-- **Live output preview** — the ATEM streams to Overseer's bundled RTMP ingest and plays back in the tile with no transcode
+- **Live output preview**: the ATEM streams to Overseer's bundled RTMP ingest and plays back in the tile with no transcode
 - **Per-device audio monitoring** you can mute/un-mute independently, so you listen to one wall at a time
-- **Remote transport** — start/stop record and stream from the browser
+- **Remote transport**: start/stop record and stream from the browser
 
-From the top-bar **Devices** button — fleet management (see [docs/device-management.md](docs/device-management.md)):
+From the **Devices** button in the top bar you get fleet management (see [docs/device-management.md](docs/device-management.md)):
 
 - **Best-effort mDNS discovery** of ATEMs on the network, plus **manual add** by IP or hostname
 - **Add / remove** devices from the dashboard live (persisted to the config file)
-- Per-device info — model, IP, reverse-DNS hostname, record name, protocol version
+- Per-device info: model, IP, reverse-DNS hostname, record name, protocol version
 - One-click **launch of ATEM Software Control, ATEM Setup, MixEffect or ATEM Fleet Manager**, targeting the device where a mechanism exists (MixEffect URL scheme; commands are configurable) and copying the IP to the clipboard otherwise
 
 Behind each tile's ⚙ (gear):
 
-- **Streaming.xml generator** — drop it into ATEM Software Control (or apply the service to a switcher directly) so the ATEM streams to Overseer
-- **Restreamer split pipeline** (optional) — stream the ATEM to a [Restreamer](https://datarhei.com/restreamer) instead, which copies one feed back to Overseer for preview and fans the rest out to YouTube/Twitch/etc., managed per-device. See [docs/restreamer.md](docs/restreamer.md). Built as a portable `@av/restreamer` package so [flock](https://github.com/stoatworks-labs/flock) can reuse it.
+- **Streaming.xml generator**: drop it into ATEM Software Control (or apply the service to a switcher directly) so the ATEM streams to Overseer
+- **Restreamer split pipeline** (optional): stream the ATEM to a [Restreamer](https://datarhei.com/restreamer) instead, which copies one feed back to Overseer for preview and fans the rest out to YouTube/Twitch/etc., managed per-device. See [docs/restreamer.md](docs/restreamer.md). Built as a portable `@av/restreamer` package so [flock](https://github.com/stoatworks-labs/flock) can reuse it.
 - **Config XML save / load** for the monitored fleet
 - **Media pool upload** (any image, converted to the switcher's native RGBA in-browser) and **media-player assignment**
 
@@ -147,10 +148,10 @@ macOS builds are signed and notarised and open normally. The Windows builds are 
                             └───────────────────────┘
 ```
 
-- **`packages/server`** — Node + TypeScript. Wraps [`atem-connection`](https://www.npmjs.com/package/atem-connection) for each device, normalizes state into a UI-friendly model, and fans it out over WebSocket. Bundles [`node-media-server`](https://www.npmjs.com/package/node-media-server) so each switcher's RTMP stream is re-served as low-latency http-flv. REST for commands, config, and media upload.
-- **`packages/web`** — Vite + React + TypeScript. The multiview dashboard; [`mpegts.js`](https://www.npmjs.com/package/mpegts.js) for playback.
+- **`packages/server`**: Node + TypeScript. Wraps [`atem-connection`](https://www.npmjs.com/package/atem-connection) for each device, normalises state into a model the UI can use, and fans it out over WebSocket. Bundles [`node-media-server`](https://www.npmjs.com/package/node-media-server) so each switcher's RTMP stream is re-served as low-latency http-flv. REST for commands, config and media upload.
+- **`packages/web`**: Vite + React + TypeScript. The multiview dashboard; [`mpegts.js`](https://www.npmjs.com/package/mpegts.js) for playback.
 
-The stream key **is** the device id — that's how a published RTMP stream is matched to its tile.
+The stream key **is** the device id. That's how a published RTMP stream gets matched to its tile.
 
 ## Quick start
 
@@ -166,7 +167,7 @@ npm run build
 npm start
 ```
 
-Set `publicHost` to the IP the ATEMs (and browsers) reach this machine at — it's
+Set `publicHost` to the IP the ATEMs (and browsers) reach this machine at. It's
 baked into the generated `Streaming.xml` and the http-flv playback URLs.
 
 ### Wiring up live preview
@@ -175,15 +176,15 @@ baked into the generated `Streaming.xml` and the http-flv playback URLs.
    Control's streaming support folder (or hit **Apply local service to switcher**
    to push the RTMP URL directly over the protocol).
 2. Set the switcher's stream key to its Overseer device id (listed in the XML).
-3. Start streaming — the feed appears in the tile.
+3. Start streaming, and the feed appears in the tile.
 
 ## Desktop app
 
-Prefer a one-click app over `npm`? The [`launcher/`](launcher/) directory wraps
-Overseer in the fleet's [av-launcher](https://github.com/stoatworks-labs/av-launcher)
-tray shell — a small native menu-bar app (Tauri v2) that embeds a Node runtime
-and the whole app, so nothing needs to be installed. Pick an interface + port,
-Start/Stop, and open the dashboard from the system tray. Download an installer
+Rather have a one-click app than `npm`? The [`launcher/`](launcher/) directory wraps
+Overseer in the [av-launcher](https://github.com/stoatworks-labs/av-launcher) tray shell
+my other apps use: a small native menu-bar app (Tauri v2) that embeds a Node runtime and
+the whole app, so there's nothing else to install. Pick an interface and port, start and
+stop it, and open the dashboard from the system tray. Download an installer
 from [Releases](https://github.com/stoatworks-labs/atem-overseer/releases), or see
 [`launcher/README.md`](launcher/README.md) to build one.
 
@@ -210,7 +211,7 @@ from [Releases](https://github.com/stoatworks-labs/atem-overseer/releases), or s
 ## Scope & honest caveats
 
 - **Metering is telemetry, always shown.** The per-tile mute only silences the
-  browser's local audio playback of that stream — it never affects the meter or
+  browser's local audio playback of that stream, and never affects the meter or
   the switcher.
 - **"Drive capacity"** comes from the ATEM as *recording time available*, not raw
   bytes (the protocol doesn't expose capacity); the bar uses 4h as a nominal
@@ -218,26 +219,26 @@ from [Releases](https://github.com/stoatworks-labs/atem-overseer/releases), or s
 - **Config XML** here is Overseer's own fleet/ingest config, not a full ATEM
   state backup. Device-list changes take effect on restart.
 - **No authentication, and the server binds to every interface.** Anyone who can reach port
-  4700 can start/stop recording and streaming on your switchers. There is no token, session or
-  TLS option — run it on a private production network only.
-- Developed and verified end-to-end against the built-in `--mock` fleet, and since
-  tested against real ATEM hardware in a lab — but never on a live show. Validate
-  transport/upload behaviour against your specific ATEM model before relying on
+  4700 can start/stop recording and streaming on your switchers. There's no token, session or
+  TLS option, so only run it on a private production network.
+- Developed and verified end to end against the built-in `--mock` fleet, and since
+  tested against real ATEM hardware in a lab, but never on a live show. Check the
+  transport and upload behaviour against your own ATEM model before you rely on
   it live.
 
 ## Windows SmartScreen & Defender Firewall
 
-macOS builds are **Developer ID-signed and notarised by Apple** — they open
+macOS builds are **Developer ID-signed and notarised by Apple**, so they open
 normally, with no Gatekeeper warning and no quarantine step. The Windows
-binaries are **not** code-signed, so Windows still warns you the first time.
+binaries **aren't** code-signed, so Windows still warns you the first time.
 
-- **Windows** — SmartScreen shows *"Windows protected your PC"* →
+- **Windows**: SmartScreen shows *"Windows protected your PC"* →
   **More info** → **Run anyway**.
-- **Windows Defender Firewall** — first launch pops *"Allow Atem Overseer to communicate
-  on these networks"*. Tick **Private** (and **Domain** on a managed network) — Atem
+- **Windows Defender Firewall**: the first launch pops up *"Allow Atem Overseer to communicate
+  on these networks"*. Tick **Private** (and **Domain** on a managed network), because Atem
   Overseer needs it to serve the dashboard and poll ATEM switchers on the LAN. Deny it
   and switchers stay greyed out and the dashboard won't load from another machine.
-- **Linux** — no signing gate.
+- **Linux**: no signing gate.
 
 Per-artifact steps, self-signing, checksum verification and the Defender Firewall reset
 procedure: **[docs/UNSIGNED.md](docs/UNSIGNED.md)**.
@@ -246,16 +247,16 @@ procedure: **[docs/UNSIGNED.md](docs/UNSIGNED.md)**.
 
 [**companion-module-atem-overseer**](https://github.com/stoatworks-labs/companion-module-atem-overseer) is a [Bitfocus Companion](https://bitfocus.io/companion) connection module for this app.
 
-Record and stream per switcher **and across the whole fleet**, PGM/ISO mode,
-monitor mute and restreamer channels, with a preset section generated per
-switcher.
+It does record and stream per switcher **and across the whole fleet**, PGM/ISO
+mode, monitor mute and restreamer channels, with a preset section generated for
+each switcher.
 
-The button worth putting in front of an operator is **ALL rolling** — every
-*connected* switcher recording. "Something is recording" is true when three of
-four machines are rolling, which is the failure an ISO shoot cannot recover
-from.
+The button worth putting in front of an operator is **ALL rolling**, which means
+every *connected* switcher is recording. "Something is recording" is still true
+when three of four machines are rolling, and that's the failure an ISO shoot
+can't recover from.
 
-It is not in the official Companion module store — install it via
+It's not in the official Companion module store, so install it via
 **Settings → Developer modules path**.
 
 ## License

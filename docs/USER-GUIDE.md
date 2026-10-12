@@ -1,22 +1,22 @@
 # Atem Overseer user guide
 
-Atem Overseer **monitors and controls a fleet of Blackmagic ATEM switchers from one screen** —
+Atem Overseer monitors and controls a fleet of Blackmagic ATEM switchers from one screen:
 one tile per switcher, showing live preview, audio, record and stream state, with transport
 controls under each.
 
 > **Before you rely on this:** it was developed and verified end to end against the built-in
 > simulated fleet (`--mock`), with real test-pattern streams pushed into the RTMP ingest so the
-> picture in the tiles is genuine even though the switcher state is simulated. It **has since
-> been tested against real ATEM hardware in a lab**, but **never on a live show**.
+> picture in the tiles is real even though the switcher state is simulated. It's **since been
+> tested against real ATEM hardware in a lab**, but **never on a live show**.
 >
-> **There is also no authentication, and the server listens on every network interface.** Anyone
+> **There's also no authentication, and the server listens on every network interface.** Anyone
 > who can reach port 4700 can start and stop recording and streaming on your switchers, with no
 > password. See [Security](#security).
 >
 > This project was written with AI assistance and reviewed by a human. Use at your own risk in
 > live environments.
 
-Three existing documents cover subsystems in depth and are **not** repeated here:
+Three other documents cover the subsystems in depth, and I haven't repeated them here:
 [device-management.md](device-management.md) (adding devices, discovery, launching external
 apps), [streaming-setup.md](streaming-setup.md) (getting live preview working end to end) and
 [restreamer.md](restreamer.md) (the optional split pipeline for multi-destination egress). This
@@ -39,22 +39,22 @@ npm run build
 npm start
 ```
 
-There is also a one-click desktop app — see the README's Desktop app section.
+There's also a one-click desktop app (see the README's Desktop app section).
 
 ### `publicHost` is the setting that breaks everything if it's wrong
 
-Set it to **the address the ATEMs and the browsers reach this machine at**. It is baked into the
+Set it to **the address the ATEMs and the browsers reach this machine at**. It's baked into the
 generated `Streaming.xml` and into the http-flv playback URLs.
 
-If it is `localhost`, or an interface the switchers can't route to, the switchers will fail to
-find the ingest and the browser will fail to find the playback — **and nothing will tell you that
-is why**. Tiles simply stay dark.
+If it's `localhost`, or an interface the switchers can't route to, the switchers won't find the
+ingest and the browser won't find the playback, **and nothing will tell you that's why**. The
+tiles just stay dark.
 
 ### A note on `--mock`
 
 `--mock` simulates every switcher, so nothing touches hardware. But it only substitutes the
-built-in demo fleet **if your config file has no devices** — with a real config present you will
-see **your own device names, simulated**. Don't read familiar names on screen as evidence you are
+built-in demo fleet **if your config file has no devices**. With a real config present you'll
+see **your own device names, simulated**. Don't take familiar names on screen as proof you're
 connected to anything.
 
 ---
@@ -68,7 +68,7 @@ Each tile is one switcher.
 *The simulated fleet. The pictures are real test-pattern streams through the RTMP ingest; the
 switcher state behind them is `--mock`.*
 
-Most of a tile is self-explanatory. These five are not:
+Most of a tile is self-explanatory. These five aren't:
 
 | What you see | What it actually is |
 |---|---|
@@ -78,7 +78,7 @@ Most of a tile is self-explanatory. These five are not:
 | **Stream cache** | Fraction of the switcher's stream buffer in use — a **network-health** indicator, not progress. A rising cache means the upstream is struggling. |
 | **Hostname** | Reverse-DNS, often blank. Blank means DNS, not a fault. |
 
-Connection state is `connecting` / `connected` / `disconnected`, per device — one switcher
+Connection state is `connecting` / `connected` / `disconnected`, per device, and one switcher
 dropping doesn't affect the rest of the fleet.
 
 ---
@@ -88,8 +88,8 @@ dropping doesn't affect the rest of the fleet.
 This catches everyone once:
 
 - **The per-tile mute button** is **browser-local**. It silences *your* playback of that tile's
-  stream. It changes nothing on the switcher, and **it does not affect the meters** — the meter
-  keeps moving on a muted tile, which is intentional.
+  stream. It changes nothing on the switcher, and **it doesn't affect the meters**: the meter
+  keeps moving on a muted tile, on purpose.
 - **Monitor mute** is the **ATEM's own monitor bus**, sent to the switcher. It affects what comes
   out of the switcher's monitor output, for everyone.
 
@@ -101,15 +101,15 @@ If someone says "I muted it and it's still loud in the room", they used the brow
 
 Record start/stop, stream start/stop, and record mode (**PGM** or **ISO**).
 
-These are **real commands to real switchers that may be live on air**. There is no confirmation
+These are **real commands to real switchers that may be live on air**. There's no confirmation
 step and no undo. Two consequences:
 
-- **Check which tile you are on.** The dashboard is designed for a fleet, so the buttons are close
+- **Check which tile you're on.** The dashboard is designed for a fleet, so the buttons are close
   together by nature.
-- **Anyone who can reach the dashboard can press them** — see [Security](#security).
+- **Anyone who can reach the dashboard can press them** (see [Security](#security)).
 
 Recording writes to whatever disk the switcher has in its working set. Check the drive readout
-before a long record, keeping in mind it is *time*, not space.
+before a long record, bearing in mind it's *time*, not space.
 
 ---
 
@@ -118,7 +118,7 @@ before a long record, keeping in mind it is *time*, not space.
 Full walkthrough in [streaming-setup.md](streaming-setup.md). The short version:
 
 1. Tile ⚙ → **Download Streaming.xml**, and put it in ATEM Software Control's streaming support
-   folder — or hit **Apply local service to switcher** to push the RTMP config directly over the
+   folder, or hit **Apply local service to switcher** to push the RTMP config directly over the
    protocol.
 2. **Set the switcher's stream key to its Overseer device id.** This is the step people miss. The
    stream key is how the ingest knows which tile a feed belongs to; get it wrong and the stream
@@ -126,8 +126,8 @@ Full walkthrough in [streaming-setup.md](streaming-setup.md). The short version:
 3. Start streaming. The feed appears in the tile.
 
 **"Apply local service to switcher" doesn't work on every model.** If the switcher's runner
-doesn't support remote streaming config you will get `device does not support remote streaming
-config` — a capability limit on the switcher, not a bug. Use the XML route instead.
+doesn't support remote streaming config you'll get `device does not support remote streaming
+config`. That's a limit of the switcher, not a bug. Use the XML route instead.
 
 ---
 
@@ -137,12 +137,12 @@ See [device-management.md](device-management.md) for discovery, adding devices b
 external-app launch buttons. Two things worth repeating here:
 
 - **The "launch external app" buttons run the app on the machine running the server**, not on the
-  machine whose browser you are using. If you are viewing the dashboard remotely, ATEM Software
-  Control opens at the server, where nobody is looking at it.
+  machine whose browser you're using. If you're viewing the dashboard remotely, ATEM Software
+  Control opens at the server, where nobody's looking at it.
 - **Importing an Overseer config XML saves it but does not apply device changes until restart.**
   The response says so, and the dashboard keeps showing the old fleet until you restart. This XML
-  is Overseer's own fleet/ingest config — **it is not an ATEM state backup**, and restoring it
-  will not restore anything about the switchers.
+  is Overseer's own fleet/ingest config. **It isn't an ATEM state backup**, and restoring it
+  won't restore anything about the switchers.
 
 ---
 
@@ -161,10 +161,10 @@ real switcher, so test an upload against your own model before you need it on a 
 ## Security
 
 The server has **no authentication and listens on every network interface**. Anyone who can reach
-port 4700 can **start and stop recording and streaming on your switchers**. There is no token, no
-login and no TLS, and none can be turned on.
+port 4700 can **start and stop recording and streaming on your switchers**. There's no token, no
+login and no TLS, and you can't turn any of them on.
 
-This belongs on a private production network — never on a venue guest network, and never
+This belongs on a private production network: never on a venue guest network, and never
 port-forwarded.
 
 ---
@@ -191,6 +191,6 @@ port-forwarded.
 
 ## See also
 
-- [API.md](API.md) — REST, WebSocket, snapshot fields, config schema
-- [DEVELOPING.md](DEVELOPING.md) — the monorepo and the mock-first rule
+- [API.md](API.md): REST, WebSocket, snapshot fields, config schema
+- [DEVELOPING.md](DEVELOPING.md): the monorepo and the mock-first rule
 - [device-management.md](device-management.md) · [streaming-setup.md](streaming-setup.md) · [restreamer.md](restreamer.md)
