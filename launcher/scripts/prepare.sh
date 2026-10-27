@@ -18,7 +18,7 @@
 # darwin-x64 / darwin-universal / linux-x64 / linux-arm64); defaults to the host.
 set -euo pipefail
 
-NODE_VERSION="v22.20.0"
+NODE_VERSION="v22.23.4"
 
 detect_platform() {
   local os arch
