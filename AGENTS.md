@@ -87,7 +87,7 @@ every release since v0.3.3 has been dead or crashing in a way no mock run showed
 - Ships as its own desktop app via **av-launcher**. Note the macOS Gatekeeper trap common to
   all av-launcher apps: for an unsigned `.app` bundling helper binaries, approving the app
   does **not** unquarantine its payload — helpers are SIGKILLed silently.
-- Multi-platform release CI; cross-compile macOS x86_64 on `macos-14` — never `macos-13`.
+- Multi-platform release CI; cross-compile macOS x86_64 on `macos-15` — never `macos-13`.
 - Public repo. "Commit" means commit **and** push.
 
 ## Notes

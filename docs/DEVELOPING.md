@@ -166,7 +166,7 @@ likely to match reality — **don't let them be described as proven** in any new
   Note the macOS Gatekeeper trap common to all av-launcher apps: for an unsigned `.app` bundling
   helper binaries, **approving the app does not unquarantine its payload** — helpers are
   SIGKILLed silently. See [`launcher/SIGNING.md`](../launcher/SIGNING.md).
-- Multi-platform release CI; **cross-compile macOS x86_64 on `macos-14` — never `macos-13`.**
+- Multi-platform release CI; **cross-compile macOS x86_64 on `macos-15` — never `macos-13`.**
 - Public repo, MIT. "Commit" means commit **and** push.
 - Keep the AI-assistance disclaimer in user-facing text.
 

@@ -20,4 +20,4 @@ Browser dashboard to monitor & control a fleet of Blackmagic ATEM switchers (BMD
 - Develop against `dev:mock` — no hardware needed; verify changes there before real devices.
 - `build:libs` must run before server/web (dev/build scripts do this).
 - `npm run smoke` boots `packages/server/dist/index.js` and asserts it serves; it refuses to run from a path containing a dot segment (so not from a worktree under `.claude/`) because `res.sendFile()` 404s from one.
-- Public repo. Multi-platform release CI; cross-compile macOS x86_64 on macos-14 (never macos-13). "Commit" = commit **and** push.
+- Public repo. Multi-platform release CI; cross-compile macOS x86_64 on macos-15 (never macos-13). "Commit" = commit **and** push.
