@@ -12,6 +12,8 @@ switchers from one screen, styled after Blackmagic's own multiviewer. Useful whe
 switchers are spread across several rooms and you'd rather not spend the day walking between
 them.
 
+The [project page](https://stoatworks-labs.com/software/atem-overseer/) has the downloads, the [user guide](https://stoatworks-labs.com/software/atem-overseer/guide/), the video and a demo you can click around in the browser.
+
 [![Watch it running — 39 seconds](docs/video-thumb.png)](https://www.youtube.com/watch?v=zY5R1NHSDAk)
 
 *A 39-second tour, driven over the app's own HTTP API. The three switchers are the
